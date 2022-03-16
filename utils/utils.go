@@ -7,19 +7,19 @@ import (
 	"github.com/vorduin/nune"
 )
 
-func Equal1D[T nune.Number](a, b nune.Tensor[T]) bool {
+func Equal1D[T nune.Number](a, b nune.Tensor[T], eq func(a, b T) bool) bool {
 	if a.Size(0) != b.Size(0) {
 		return false
 	}
 	for i := 0; i < a.Size(0); i++ {
-		if a.Index(i).Scalar() != b.Index(i).Scalar() {
+		if !eq(a.Index(i).Scalar(), b.Index(i).Scalar()) {
 			return false
 		}
 	}
 	return true
 }
 
-func Equal2D[T nune.Number](a, b nune.Tensor[T]) bool {
+func Equal2D[T nune.Number](a, b nune.Tensor[T], eq func(a, b T) bool) bool {
 	if a.Shape()[0] != b.Shape()[0] || a.Shape()[1] != b.Shape()[1] {
 		return false
 	}
@@ -27,7 +27,7 @@ func Equal2D[T nune.Number](a, b nune.Tensor[T]) bool {
 	J := a.Shape()[1]
 	for i := 0; i < I; i++ {
 		for j := 0; j < J; j++ {
-			if a.Index(i, j).Scalar() != b.Index(i, j).Scalar() {
+			if !eq(a.Index(i, j).Scalar(), b.Index(i, j).Scalar()) {
 				return false
 			}
 		}
@@ -78,7 +78,7 @@ func Dot[T nune.Number](a, b nune.Tensor[T]) nune.Tensor[T] {
 	return result
 }
 
-func crossEntropyError[T nune.Number, S nune.Number](y nune.Tensor[T], t nune.Tensor[S], eps T) T {
+func CrossEntropyError[T nune.Number, S nune.Number](y nune.Tensor[T], t nune.Tensor[S], eps T) T {
 	labelNum := y.Size(0)
 	v := nune.Zeros[T](labelNum)
 	for i := 0; i < labelNum; i++ {
@@ -102,7 +102,26 @@ func CrossEntropyErrorBatch[T ~float64, S nune.Number](yBatch nune.Tensor[T], tB
 	batchSize := yBatch.Size(0)
 	result := T(0)
 	for i := 0; i < batchSize; i++ {
-		result += crossEntropyError(yBatch.Index(i), tBatch.Index(i), eps)
+		result += CrossEntropyError(yBatch.Index(i), tBatch.Index(i), eps)
 	}
 	return result / T(batchSize)
+}
+
+func Softmax[T ~float64](x nune.Tensor[T]) nune.Tensor[T] {
+	max_x := x.Max().Scalar()
+	x = x.Sub(max_x)
+	exp_x := x.Exp()
+	exp_x_sum := exp_x.Sum().Scalar()
+	return exp_x.Div(exp_x_sum)
+}
+
+func SoftmaxBatch[T ~float64](xBatch nune.Tensor[T]) nune.Tensor[T] {
+	result := nune.Zeros[T](xBatch.Size(0), xBatch.Size(1))
+	for i := 0; i < xBatch.Size(0); i++ {
+		out := Softmax(xBatch.Index(i))
+		for j := 0; j < xBatch.Size(1); j++ {
+			result.Index(i, j).Ravel()[0] = out.Index(j).Scalar()
+		}
+	}
+	return result
 }
