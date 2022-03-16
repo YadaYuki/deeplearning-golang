@@ -3,6 +3,7 @@ package layers
 import "github.com/vorduin/nune"
 
 type Relu[T nune.Number] struct {
+	Layer[T]
 	inputM nune.Tensor[T]
 }
 
