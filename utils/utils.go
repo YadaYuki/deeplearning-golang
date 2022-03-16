@@ -68,7 +68,6 @@ func Add[T nune.Number](a, b nune.Tensor[T]) nune.Tensor[T] {
 			}
 		}
 	}
-
 	return result
 }
 
@@ -111,6 +110,30 @@ func CrossEntropyError[T nune.Number, S nune.Number](y nune.Tensor[T], t nune.Te
 		v.Index(i).Ravel()[0] = v.Index(i).Ravel()[0] * T(t.Index(i).Scalar())
 	}
 	return -v.Sum().Scalar()
+}
+
+func Sum[T nune.Number](xBatch nune.Tensor[T]) nune.Tensor[T] {
+	// TODO: correspond to 1 dim
+	sum := nune.Zeros[T](xBatch.Size(1))
+	for i := 0; i < xBatch.Size(0); i++ {
+		for j := 0; j < xBatch.Size(1); j++ {
+			sum.Index(j).Ravel()[0] += xBatch.Index(i, j).Scalar()
+		}
+	}
+	return sum
+}
+
+func Transpose[T nune.Number](x nune.Tensor[T]) nune.Tensor[T] {
+	if len(x.Shape()) != 2 {
+		panic("x must be 2D")
+	}
+	xTransposed := nune.Zeros[T](x.Size(1), x.Size(0))
+	for i := 0; i < x.Size(0); i++ {
+		for j := 0; j < x.Size(1); j++ {
+			xTransposed.Index(j, i).Ravel()[0] = x.Index(i, j).Scalar()
+		}
+	}
+	return xTransposed
 }
 
 func CrossEntropyErrorBatch[T ~float64, S nune.Number](yBatch nune.Tensor[T], tBatch nune.Tensor[S], eps T) T {
