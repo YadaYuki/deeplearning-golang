@@ -7,12 +7,32 @@ import (
 )
 
 func TestAdd(t *testing.T) {
-	a := nune.Range[int](0, 10, 1)
-	b := nune.Range[int](0, 10, 1)
-	expected := nune.Range[int](0, 20, 2)
-	c := Add(a, b)
-	if !Equal1D(c, expected, func(a, b int) bool { return a == b }) {
-		t.Errorf("Expected %v, got %v", expected, c)
+	testCases := []struct {
+		a        nune.Tensor[int]
+		b        nune.Tensor[int]
+		expected nune.Tensor[int]
+		equal    func(a, b nune.Tensor[int]) bool
+	}{
+		{
+			a:        nune.Range[int](0, 10, 1),
+			b:        nune.Range[int](0, 10, 1),
+			expected: nune.Range[int](0, 20, 2),
+			equal: func(a, b nune.Tensor[int]) bool {
+				return Equal1D(a, b, func(a, b int) bool { return a == b })
+			},
+		},
+		{
+			a:        nune.Range[int](0, 9, 1).Reshape(3, 3),
+			b:        nune.Range[int](0, 9, 1).Reshape(3, 3),
+			expected: nune.Range[int](0, 18, 2).Reshape(3, 3),
+			equal:    func(a, b nune.Tensor[int]) bool { return Equal2D(a, b, func(a, b int) bool { return a == b }) },
+		},
+	}
+	for _, tt := range testCases {
+		c := Add(tt.a, tt.b)
+		if !tt.equal(c, tt.expected) {
+			t.Errorf("Expected %v, got %v", tt.expected, c)
+		}
 	}
 }
 

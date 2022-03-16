@@ -44,14 +44,32 @@ func EqualFloat(a, b, tolerance float64) bool {
 }
 
 func Add[T nune.Number](a, b nune.Tensor[T]) nune.Tensor[T] {
-	if a.Size(0) != b.Size(0) {
-		panic("Tensors must have the same size")
+	var result nune.Tensor[T]
+	if len(a.Shape()) != len(b.Shape()) {
+		panic(fmt.Sprintf("Dimension mismatch: %d != %d", len(a.Shape()), len(b.Shape())))
 	}
-	result := make([]T, a.Size(0))
-	for i := 0; i < a.Size(0); i++ {
-		result[i] = a.Index(i).Scalar() + b.Index(i).Scalar()
+	if len(a.Shape()) == 1 {
+		if a.Size(0) != b.Size(0) {
+			panic("Tensors must have the same size")
+		}
+		result = nune.ZerosLike[T](a)
+		for i := 0; i < a.Size(0); i++ {
+			result.Index(i).Ravel()[0] = a.Index(i).Scalar() + b.Index(i).Scalar()
+		}
 	}
-	return nune.FromBuffer(result)
+	if len(a.Shape()) == 2 {
+		if a.Size(0) != b.Size(0) || a.Size(1) != b.Size(1) {
+			panic("Tensors must have the same size")
+		}
+		result = nune.ZerosLike[T](a)
+		for i := 0; i < a.Size(0); i++ {
+			for j := 0; j < a.Size(1); j++ {
+				result.Index(i, j).Ravel()[0] = a.Index(i, j).Scalar() + b.Index(i, j).Scalar()
+			}
+		}
+	}
+
+	return result
 }
 
 // dot 2D tensor & 2D tensor a * b
