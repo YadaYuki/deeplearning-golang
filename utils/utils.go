@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/vorduin/nune"
 )
@@ -32,6 +33,14 @@ func Equal2D[T nune.Number](a, b nune.Tensor[T]) bool {
 		}
 	}
 	return true
+}
+
+func EqualFloat(a, b, tolerance float64) bool {
+	if diff := math.Abs(a - b); diff < tolerance {
+		return true
+	} else {
+		return false
+	}
 }
 
 func Add[T nune.Number](a, b nune.Tensor[T]) nune.Tensor[T] {
@@ -67,4 +76,33 @@ func Dot[T nune.Number](a, b nune.Tensor[T]) nune.Tensor[T] {
 		}
 	}
 	return result
+}
+
+func crossEntropyError[T nune.Number, S nune.Number](y nune.Tensor[T], t nune.Tensor[S], eps T) T {
+	labelNum := y.Size(0)
+	v := nune.Zeros[T](labelNum)
+	for i := 0; i < labelNum; i++ {
+		if t.Index(i).Scalar() == 1 {
+			v.Index(i).Ravel()[0] = y.Index(i).Scalar() + eps
+		} else {
+			v.Index(i).Ravel()[0] = 1 - y.Index(i).Scalar() + eps
+		}
+	}
+	v = v.Log()
+	for i := 0; i < labelNum; i++ {
+		v.Index(i).Ravel()[0] = v.Index(i).Ravel()[0] * T(t.Index(i).Scalar())
+	}
+	return -v.Sum().Scalar()
+}
+
+func CrossEntropyErrorBatch[T ~float64, S nune.Number](yBatch nune.Tensor[T], tBatch nune.Tensor[S], eps T) T {
+	if (yBatch.Size(0) != tBatch.Size(0)) || (yBatch.Size(1) != tBatch.Size(1)) {
+		panic(fmt.Sprintf("yBatch and tBatch must have the same size yBatch.Shape:%v,tBatch.Sahpe:%v", yBatch.Shape(), tBatch.Shape()))
+	}
+	batchSize := yBatch.Size(0)
+	result := T(0)
+	for i := 0; i < batchSize; i++ {
+		result += crossEntropyError(yBatch.Index(i), tBatch.Index(i), eps)
+	}
+	return result / T(batchSize)
 }

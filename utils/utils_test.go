@@ -46,3 +46,27 @@ func TestDot(t *testing.T) {
 		}
 	}
 }
+
+func TestCrossEntropyErrorBatch(t *testing.T) {
+	testCases := []struct {
+		yBatch   nune.Tensor[float64]
+		tBatch   nune.Tensor[int]
+		expected float64
+	}{
+		{
+			yBatch:   nune.FromBuffer([]float64{0.7, 0.2, 0.1}).Reshape(1, 3),
+			tBatch:   nune.FromBuffer([]int{0, 0, 1}).Reshape(1, 3),
+			expected: 2.3025,
+		},
+		{
+			yBatch:   nune.FromBuffer([]float64{0.0, 0.0, 0.8, 0.2}).Reshape(1, 4),
+			tBatch:   nune.FromBuffer([]int{0, 0, 1, 0}).Reshape(1, 4),
+			expected: 0.2231,
+		},
+	}
+	for _, tt := range testCases {
+		if !EqualFloat(CrossEntropyErrorBatch(tt.yBatch, tt.tBatch, 1e-7), tt.expected, 0.0001) {
+			t.Errorf("Expected %v, got %v", tt.expected, CrossEntropyErrorBatch(tt.yBatch, tt.tBatch, 1e-7))
+		}
+	}
+}
