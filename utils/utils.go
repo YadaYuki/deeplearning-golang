@@ -95,17 +95,17 @@ func Dot[T nune.Number](a, b nune.Tensor[T]) nune.Tensor[T] {
 	return result
 }
 
-func CrossEntropyError[T nune.Number, S nune.Number](y nune.Tensor[T], t nune.Tensor[S], eps T) T {
+func CrossEntropyError[T nune.Number, S ~float64](y nune.Tensor[T], t nune.Tensor[T], eps S) T {
 	labelNum := y.Size(0)
 	v := nune.Zeros[T](labelNum)
 	for i := 0; i < labelNum; i++ {
 		if t.Index(i).Scalar() == 1 {
-			v.Index(i).Ravel()[0] = y.Index(i).Scalar() + eps
+			v.Index(i).Ravel()[0] = y.Index(i).Scalar() + T(eps)
 		} else {
-			v.Index(i).Ravel()[0] = 1 - y.Index(i).Scalar() + eps
+			v.Index(i).Ravel()[0] = 1 - y.Index(i).Scalar() + T(eps)
 		}
 	}
-	v = v.Log()
+	v.Log()
 	for i := 0; i < labelNum; i++ {
 		v.Index(i).Ravel()[0] = v.Index(i).Ravel()[0] * T(t.Index(i).Scalar())
 	}
@@ -136,7 +136,7 @@ func Transpose[T nune.Number](x nune.Tensor[T]) nune.Tensor[T] {
 	return xTransposed
 }
 
-func CrossEntropyErrorBatch[T ~float64, S nune.Number](yBatch nune.Tensor[T], tBatch nune.Tensor[S], eps T) T {
+func CrossEntropyErrorBatch[T nune.Number, S ~float64](yBatch nune.Tensor[T], tBatch nune.Tensor[T], eps S) T {
 	if (yBatch.Size(0) != tBatch.Size(0)) || (yBatch.Size(1) != tBatch.Size(1)) {
 		panic(fmt.Sprintf("yBatch and tBatch must have the same size yBatch.Shape:%v,tBatch.Sahpe:%v", yBatch.Shape(), tBatch.Shape()))
 	}
@@ -148,15 +148,15 @@ func CrossEntropyErrorBatch[T ~float64, S nune.Number](yBatch nune.Tensor[T], tB
 	return result / T(batchSize)
 }
 
-func Softmax[T ~float64](x nune.Tensor[T]) nune.Tensor[T] {
+func Softmax[T nune.Number](x nune.Tensor[T]) nune.Tensor[T] {
 	max_x := x.Max().Scalar()
-	x = x.Sub(max_x)
+	x.Sub(max_x)
 	exp_x := x.Exp()
 	exp_x_sum := exp_x.Sum().Scalar()
 	return exp_x.Div(exp_x_sum)
 }
 
-func SoftmaxBatch[T ~float64](xBatch nune.Tensor[T]) nune.Tensor[T] {
+func SoftmaxBatch[T nune.Number](xBatch nune.Tensor[T]) nune.Tensor[T] {
 	result := nune.Zeros[T](xBatch.Size(0), xBatch.Size(1))
 	for i := 0; i < xBatch.Size(0); i++ {
 		out := Softmax(xBatch.Index(i))
