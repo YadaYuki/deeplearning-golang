@@ -59,8 +59,8 @@ func train[T nune.Number](net *model.TwoLayerNet[T], xTrain nune.Tensor[T], tTra
 			xBatch := getBatchData(batchIdxes[i], xTrain)
 			tBatch := getBatchData(batchIdxes[i], tTrain)
 			loss := net.TrainStep(xBatch, tBatch)
-			if i%20 == 0 {
-				fmt.Println("train loss: \n", loss)
+			if (i+1)%20 == 0 {
+				fmt.Printf("iter:%d/%d train loss: %v \n", (i + 1), len(batchIdxes), loss)
 			}
 		}
 	}
