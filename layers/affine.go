@@ -30,8 +30,7 @@ func (affine *Affine[T]) Backward(dy nune.Tensor[T]) (dx nune.Tensor[T], dW nune
 	dx = utils.Dot(dy, utils.Transpose(*affine.W))
 	dW = utils.Dot(utils.Transpose(affine.xM), dy)
 	dB = utils.Sum(dy)
-	*affine.W = utils.Add(*affine.W, dW.Clone().Mul(-1.0)) // dW自体も書き換えられてしまうため、Cloneしておく
-	*affine.B = utils.Add(*affine.B, dB.Clone().Mul(-1.0)) // dB自体も書き換えられてしまうため、Cloneしておく
-
+	*affine.W = utils.Add(*affine.W, dW.Clone().Mul(-1.0*0.1)) // dW自体も書き換えられてしまうため、Cloneしておく
+	*affine.B = utils.Add(*affine.B, dB.Clone().Mul(-1.0*0.1)) // dB自体も書き換えられてしまうため、Cloneしておく
 	return dx, dW, dB
 }
