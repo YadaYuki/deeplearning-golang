@@ -65,5 +65,4 @@ func TestSoftmaxWithLossBackward(t *testing.T) {
 			t.Errorf("Expected %v, got %v", tt.expectedDx, dx)
 		}
 	}
-
 }
