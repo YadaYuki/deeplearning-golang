@@ -1,4 +1,4 @@
-module example.com/m
+module github.com/YadaYuki/deeplearning-golang
 
 go 1.18
 

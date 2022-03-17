@@ -7,12 +7,41 @@ import (
 )
 
 func TestAdd(t *testing.T) {
-	a := nune.Range[int](0, 10, 1)
-	b := nune.Range[int](0, 10, 1)
-	expected := nune.Range[int](0, 20, 2)
-	c := Add(a, b)
-	if !Equal1D(c, expected, func(a, b int) bool { return a == b }) {
-		t.Errorf("Expected %v, got %v", expected, c)
+	testCases := []struct {
+		a        nune.Tensor[int]
+		b        nune.Tensor[int]
+		expected nune.Tensor[int]
+		equal    func(a, b nune.Tensor[int]) bool
+	}{
+		{
+			a:        nune.Range[int](0, 10, 1),
+			b:        nune.Range[int](0, 10, 1),
+			expected: nune.Range[int](0, 20, 2),
+			equal: func(a, b nune.Tensor[int]) bool {
+				return Equal1D(a, b, func(a, b int) bool { return a == b })
+			},
+		},
+		{
+			a:        nune.Range[int](0, 9, 1).Reshape(3, 3),
+			b:        nune.Range[int](0, 9, 1).Reshape(3, 3),
+			expected: nune.Range[int](0, 18, 2).Reshape(3, 3),
+			equal:    func(a, b nune.Tensor[int]) bool { return Equal2D(a, b, func(a, b int) bool { return a == b }) },
+		},
+	}
+	for _, tt := range testCases {
+		c := Add(tt.a, tt.b)
+		if !tt.equal(c, tt.expected) {
+			t.Errorf("Expected %v, got %v", tt.expected, c)
+		}
+	}
+}
+
+func TestTranspose(t *testing.T) {
+	a := nune.Range[int](0, 12, 1).Reshape(3, 4)
+	expected := nune.FromBuffer([]int{0, 4, 8, 1, 5, 9, 2, 6, 10, 3, 7, 11}).Reshape(4, 3)
+	equal := func(a, b nune.Tensor[int]) bool { return Equal2D(a, b, func(a, b int) bool { return a == b }) }
+	if !equal(Transpose(a), expected) {
+		t.Errorf("Expected %v, got %v", expected, Transpose(a))
 	}
 }
 
@@ -42,6 +71,24 @@ func TestDot(t *testing.T) {
 	for _, tt := range testCases {
 		c := Dot(tt.a, tt.b)
 		if !Equal2D(c, tt.expected, func(a, b int) bool { return a == b }) {
+			t.Errorf("Expected %v, got %v", tt.expected, c)
+		}
+	}
+}
+
+func TestSum(t *testing.T) {
+	testCases := []struct {
+		a        nune.Tensor[int]
+		expected nune.Tensor[int]
+	}{
+		{
+			a:        nune.Range[int](0, 9, 1).Reshape(3, 3),
+			expected: nune.FromBuffer([]int{9, 12, 15}),
+		},
+	}
+	for _, tt := range testCases {
+		c := Sum(tt.a)
+		if !Equal1D(c, tt.expected, func(a, b int) bool { return a == b }) {
 			t.Errorf("Expected %v, got %v", tt.expected, c)
 		}
 	}
