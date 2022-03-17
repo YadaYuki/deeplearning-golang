@@ -16,5 +16,4 @@
 
 .envrc
 
-mnist/*
-!mnist/mnist.sh
+mnist/data
