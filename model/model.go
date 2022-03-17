@@ -6,7 +6,13 @@ import (
 	"github.com/vorduin/nune"
 )
 
+type Model[T nune.Number] interface {
+	Predict(x nune.Tensor[T]) nune.Tensor[T]
+	Backward()
+}
+
 type TwoLayerNet[T nune.Number] struct {
+	Model[T]
 	AffineLayer1         *layers.Affine[T]
 	ReluLayer            *layers.Relu[T]
 	AffineLayer2         *layers.Affine[T]
@@ -47,8 +53,7 @@ func (model *TwoLayerNet[T]) ForwardAndLoss(x nune.Tensor[T], t nune.Tensor[T]) 
 }
 
 func (model *TwoLayerNet[T]) Backward() {
-	dummy := nune.Zeros[T](1)
-	dy := model.SoftmaxWithLossLayer.Backward(dummy)
+	dy := model.SoftmaxWithLossLayer.Backward()
 	dy, _, _ = model.AffineLayer2.Backward(dy)
 	dy = model.ReluLayer.Backward(dy)
 	model.AffineLayer1.Backward(dy)

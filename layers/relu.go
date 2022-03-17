@@ -4,7 +4,7 @@ import "github.com/vorduin/nune"
 
 type Relu[T nune.Number] struct {
 	Layer[T]
-	inputM nune.Tensor[T]
+	xM nune.Tensor[T]
 }
 
 func NewRelu[T nune.Number]() *Relu[T] {
@@ -12,7 +12,7 @@ func NewRelu[T nune.Number]() *Relu[T] {
 }
 
 func (relu *Relu[T]) Forward(x nune.Tensor[T]) nune.Tensor[T] {
-	relu.inputM = x
+	relu.xM = x
 	y := x.Map(func(x T) T {
 		if x < 0 {
 			return 0
@@ -23,10 +23,10 @@ func (relu *Relu[T]) Forward(x nune.Tensor[T]) nune.Tensor[T] {
 }
 
 func (relu *Relu[T]) Backward(dy nune.Tensor[T]) nune.Tensor[T] {
-	dx := nune.ZerosLike[T](relu.inputM)
+	dx := nune.ZerosLike[T](relu.xM)
 	for i := 0; i < dy.Size(0); i++ {
 		for j := 0; j < dy.Size(1); j++ {
-			if relu.inputM.Index(i, j).Scalar() > 0 {
+			if relu.xM.Index(i, j).Scalar() > 0 {
 				dx.Index(i, j).Ravel()[0] = dy.Index(i, j).Scalar()
 			}
 		}

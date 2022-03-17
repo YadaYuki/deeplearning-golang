@@ -22,7 +22,7 @@ func (softmaxWithLoss *SoftmaxWithLoss[T]) Forward(x nune.Tensor[T], t nune.Tens
 	return loss
 }
 
-func (softmaxWithLoss *SoftmaxWithLoss[T]) Backward(_ nune.Tensor[T]) nune.Tensor[T] {
+func (softmaxWithLoss *SoftmaxWithLoss[T]) Backward() nune.Tensor[T] {
 	batchSize := softmaxWithLoss.yM.Shape()[0]
 	dx := utils.Add(softmaxWithLoss.yM, softmaxWithLoss.tM.Clone().Mul(-1))
 	dx = dx.Div(batchSize)
