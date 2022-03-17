@@ -13,14 +13,17 @@ type TwoLayerNet[T nune.Number] struct {
 	SoftmaxWithLossLayer *layers.SoftmaxWithLoss[T]
 }
 
-func NewTwoLayerNet[T nune.Number](inputDim int, hiddenDim int, outDim int, weightInitilizer func() T) *TwoLayerNet[T] {
+func NewTwoLayerNet[T nune.Number](inputDim int, hiddenDim int, outDim int, weightInitilizer func() T, biasInitializer func() T) *TwoLayerNet[T] {
 	f := func(x T) T {
 		return weightInitilizer()
 	}
+	f2 := func(x T) T {
+		return biasInitializer()
+	}
 	W1 := nune.Zeros[T](inputDim, hiddenDim).Map(f)
-	B1 := nune.Zeros[T](hiddenDim).Map(f)
+	B1 := nune.Zeros[T](hiddenDim).Map(f2)
 	W2 := nune.Zeros[T](hiddenDim, outDim).Map(f)
-	B2 := nune.Zeros[T](outDim).Map(f)
+	B2 := nune.Zeros[T](outDim).Map(f2)
 	return &TwoLayerNet[T]{
 		AffineLayer1:         layers.NewAffine(&W1, &B1),
 		ReluLayer:            layers.NewRelu[T](),
