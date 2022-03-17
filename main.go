@@ -2,18 +2,18 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
+	"os"
+	"path"
 
-	"github.com/vorduin/nune"
+	"github.com/YadaYuki/deeplearning-golang/mnist"
 )
 
 func main() {
-	t := nune.Zeros[float64](5, 5)
-	weightInitilizer := func() float64 {
-		return rand.Float64()
-	}
-	t.Map(func(x float64) float64 {
-		return weightInitilizer()
-	})
-	fmt.Println(t)
+	wd, _ := os.Getwd()
+	pathToMnistDir := path.Join(wd, "mnist/data")
+	xTrain, tTrain, xTest, tTest, _ := mnist.LoadMnist[float64](pathToMnistDir, true)
+	fmt.Println(xTrain.Shape())
+	fmt.Println(tTrain.Shape())
+	fmt.Println(xTest.Shape())
+	fmt.Println(tTest.Shape())
 }
