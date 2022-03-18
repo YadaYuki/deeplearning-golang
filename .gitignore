@@ -16,4 +16,5 @@
 
 .envrc
 
-mnist/data
+mnist/data/*
+!mnist/data/.gitkeep
