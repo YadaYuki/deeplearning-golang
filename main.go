@@ -79,7 +79,6 @@ func test[T nune.Number](net *model.TwoLayerNet[T], xVal nune.Tensor[T], tVal nu
 		tBatch := getBatchData(batchIdxes[i], tVal)
 		yBatch := net.Predict(xBatch)
 		correct += getCorrectNum(yBatch, tBatch)
-		fmt.Println(correct, getCorrectNum(yBatch, tBatch))
 		loss += float64(net.ForwardAndLoss(xBatch, tBatch))
 	}
 	fmt.Println("Test finished")
