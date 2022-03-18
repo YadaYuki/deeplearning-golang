@@ -8,21 +8,9 @@ import (
 
 	"github.com/YadaYuki/deeplearning-golang/mnist"
 	"github.com/YadaYuki/deeplearning-golang/model"
+	"github.com/YadaYuki/deeplearning-golang/utils"
 	"github.com/vorduin/nune"
 )
-
-func shuffle(a []int) []int {
-	rand.Shuffle(len(a), func(i, j int) { a[i], a[j] = a[j], a[i] })
-	return a
-}
-
-func getRange(from int, to int) []int {
-	a := make([]int, to-from)
-	for i := from; i < to; i++ {
-		a[i-from] = i
-	}
-	return a
-}
 
 func getBatchData[T nune.Number](idxes []int, data nune.Tensor[T]) nune.Tensor[T] {
 	batchSize := len(idxes)
@@ -36,40 +24,75 @@ func getBatchData[T nune.Number](idxes []int, data nune.Tensor[T]) nune.Tensor[T
 	return batchX
 }
 
-func splitSlice[T any](slices []T, n int) [][]T {
-	result := [][]T{}
-	for i := 0; i < len(slices); i += n {
-		if i+n > len(slices) {
-			break
+func where[T nune.Number](data nune.Tensor[T], target T) (int, error) {
+	size := data.Size(0)
+	for i := 0; i < size; i++ {
+		if data.Index(i).Scalar() == target {
+			return i, nil
 		}
-		result = append(result, slices[i:i+n])
+	}
+	return -1, fmt.Errorf("target not found")
+}
 
+func getCorrectNum[T nune.Number](yBatch nune.Tensor[T], tBatch nune.Tensor[T]) int {
+	if yBatch.Shape()[0] != tBatch.Shape()[0] || yBatch.Shape()[1] != tBatch.Shape()[1] {
+		panic("Dimension mismatch")
 	}
-	if len(slices)%n != 0 {
-		result = append(result, slices[len(slices)-len(slices)%n:])
+	batchSize := yBatch.Shape()[0]
+	correct := 0
+	for i := 0; i < batchSize; i++ {
+		y_pred, _ := where(yBatch.Index(i), yBatch.Index(i).Max().Scalar())
+		t_true, _ := where(tBatch.Index(i), tBatch.Index(i).Max().Scalar())
+		if y_pred == t_true {
+			correct++
+		}
 	}
-	return result
+	return correct
 }
 
 func train[T nune.Number](net *model.TwoLayerNet[T], xTrain nune.Tensor[T], tTrain nune.Tensor[T], batchSize int) {
 	dataSize := xTrain.Shape()[0]
-	batchIdxes := splitSlice(shuffle(getRange(0, dataSize)), batchSize)
+	batchIdxes := utils.SplitSlice(utils.Shuffle(utils.Range(0, dataSize)), batchSize)
+	fmt.Println("Train")
 	for epoch := 0; epoch < 10; epoch++ {
+		fmt.Println("epoch:", epoch+1)
 		for i := 0; i < len(batchIdxes); i++ {
 			xBatch := getBatchData(batchIdxes[i], xTrain)
 			tBatch := getBatchData(batchIdxes[i], tTrain)
 			loss := net.TrainStep(xBatch, tBatch)
-			if i%20 == 0 {
-				fmt.Println("train loss: \n", loss)
+			if (i+1)%20 == 0 {
+				fmt.Printf("iter:%d/%d train loss: %v \n", (i + 1), len(batchIdxes), loss)
 			}
 		}
 	}
+	fmt.Println("Train finished")
+}
+
+func test[T nune.Number](net *model.TwoLayerNet[T], xVal nune.Tensor[T], tVal nune.Tensor[T], batchSize int) (accuracy float64, loss float64) {
+	dataSize := xVal.Shape()[0]
+	batchIdxes := utils.SplitSlice(utils.Range(0, dataSize), batchSize)
+	loss = 0.0
+	correct := 0
+	fmt.Println("Test")
+	for i := 0; i < len(batchIdxes); i++ {
+		xBatch := getBatchData(batchIdxes[i], xVal)
+		tBatch := getBatchData(batchIdxes[i], tVal)
+		yBatch := net.Predict(xBatch)
+		correct += getCorrectNum(yBatch, tBatch)
+		loss += float64(net.ForwardAndLoss(xBatch, tBatch))
+	}
+	fmt.Println("Test finished")
+	loss /= float64(len(batchIdxes))
+	return float64(correct) / float64(dataSize), loss
 }
 
 func main() {
+	// load mnist data
 	wd, _ := os.Getwd()
 	pathToMnistDir := path.Join(wd, "mnist/data")
-	xTrain, tTrain, _, _, _ := mnist.LoadMnist[float64](pathToMnistDir, true)
+	xTrain, tTrain, xTest, tTest, _ := mnist.LoadMnist[float64](pathToMnistDir, true)
+
+	// initialize network
 	weightInitilizer := func() float64 {
 		return rand.Float64() * 0.01
 	}
@@ -77,5 +100,9 @@ func main() {
 		return rand.Float64()
 	}
 	net := model.NewTwoLayerNet(784, 50, 10, weightInitilizer, biasInitilizer)
-	train(net, xTrain, tTrain, 100)
+	// train & test network
+	batchSize := 100
+	train(net, xTrain, tTrain, batchSize)
+	accuracy, loss := test(net, xTest, tTest, batchSize)
+	fmt.Printf("accuracy: %v, loss: %v\n", accuracy, loss)
 }
