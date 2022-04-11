@@ -2,6 +2,9 @@
 
 - Deep Leaning implementation by Golang
 - Dataset: [MNIST](http://yann.lecun.com/exdb/mnist/)
+- Implemented during spring internship at Mercari Inc.
+  - About the event: https://mercan.mercari.com/articles/31914/
+- Slide: https://docs.google.com/presentation/d/1xgZ-q9xg8QciYratFcFoUVVn1_MJOMA5KTJI1IQoQq8/edit
 
 ## Requirements
 - [Go](https://go.dev/dl/) 1.18+
